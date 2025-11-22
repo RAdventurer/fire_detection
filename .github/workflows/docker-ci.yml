@@ -25,12 +25,15 @@ jobs:
 
       - name: Build Docker image
         run: |
-          IMAGE_NAME=ghcr.io/${{ github.actor | lower }}/fire-detector:latest
+          # GITHUB_ACTOR is an env var like "RAdventurer"
+          ACTOR_LC="${GITHUB_ACTOR,,}"   # bash: lowercase
+          IMAGE_NAME="ghcr.io/${ACTOR_LC}/fire-detector:latest"
           echo "Building image: $IMAGE_NAME"
-          docker build -t $IMAGE_NAME .
+          docker build -t "$IMAGE_NAME" .
 
       - name: Push Docker image
         run: |
-          IMAGE_NAME=ghcr.io/${{ github.actor | lower }}/fire-detector:latest
+          ACTOR_LC="${GITHUB_ACTOR,,}"
+          IMAGE_NAME="ghcr.io/${ACTOR_LC}/fire-detector:latest"
           echo "Pushing image: $IMAGE_NAME"
-          docker push $IMAGE_NAME
+          docker push "$IMAGE_NAME"
