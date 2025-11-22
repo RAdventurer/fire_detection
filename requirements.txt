@@ -1,0 +1,10 @@
+tensorflow
+keras
+keras-cv
+opencv-python
+numpy
+matplotlib
+fastapi
+uvicorn[standard]
+opencv-python-headless
+python-multipart

@@ -1,0 +1,45 @@
+# -----------------
+# Python cache
+# -----------------
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# -----------------
+# Virtual environments
+# -----------------
+.venv/
+venv/
+env/
+tf/
+
+# -----------------
+# IDE / editor
+# -----------------
+.vscode/
+.idea/
+
+# -----------------
+# Data (DO NOT UPLOAD)
+# -----------------
+/data
+
+# -----------------
+# Logs / temp
+# -----------------
+logs/
+*.log
+runs/
+tmp/
+
+# -----------------
+# Training artifacts (optional)
+# -----------------
+weights/
+checkpoints/
+metrics/
+
+
+models/fire_retinanet/final_model.keras
+models/fire_retinanet/checkpoint.keras
