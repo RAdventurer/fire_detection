@@ -1,9 +1,69 @@
-# Fire & Smoke Detection (TensorFlow)
-This project detects fire and smoke in images and videos using a TensorFlow model.
+# Intelligent Surveillance for Telecom Sites  
+## Video Module – Fire & Smoke Detection (Technical Test)
 
-# Fire & Smoke Detection (TensorFlow)
+This repository implements the **video anomaly detection module** for the technical test:
 
-This project detects **fire** and **smoke** in images and videos using a TensorFlow model.
+> **“Système Intelligent de Surveillance Multi-Modal pour Infrastructures Télécom” – Digitup Company**
+
+The full requested system includes:
+- Video analysis
+- IoT sensor analysis
+- Network KPI analysis
+- Multi-modal fusion + alerting
+
+👉 **This repo focuses only on the video part**:  
+real-time detection of **fire** and **smoke** on telecom/industrial sites, with a deployable **FastAPI + Docker** service.
+
+---
+
+## 1. Project Overview
+
+### Goals
+
+- Detect **fire** and **smoke** in CCTV-like images  
+- Provide a **REST API** + simple **web UI**  
+- Containerize the solution with **Docker**  
+- Set up basic **CI/CD** with **GitHub Actions**  
+- Store the model on **Hugging Face Hub** (no large files in Git)
+
+### Tech Stack
+
+- **Python 3.12**
+- **TensorFlow + KerasCV (RetinaNet)**
+- **FastAPI** + **Uvicorn**
+- **OpenCV**
+- **Docker**
+- **GitHub Actions**
+- **Hugging Face Hub** (model hosting)
+
+---
+
+## 2. Dataset
+
+For this test, I use a **public Fire & Smoke dataset**, which is close to the telecom use case:
+
+- ~17k images
+- Bounding boxes in YOLO format
+- Two classes:
+  - `0 = fire`
+  - `1 = smoke`
+- Images from CCTV, industrial, indoor/outdoor scenes
+
+The dataset is **not included** in this repo (ignored by `.gitignore`).
+
+Expected structure:
+
+```text
+data/
+  train/
+    images/
+    labels/
+  val/
+    images/
+    labels/
+  test/
+    images/
+    labels/
 
 ## Structure
 
