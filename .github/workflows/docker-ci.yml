@@ -25,10 +25,12 @@ jobs:
 
       - name: Build Docker image
         run: |
-          IMAGE_NAME=ghcr.io/${{ github.actor || '' | lower }}/fire-detector:latest
+          IMAGE_NAME=ghcr.io/${{ github.actor | lower }}/fire-detector:latest
+          echo "Building image: $IMAGE_NAME"
           docker build -t $IMAGE_NAME .
 
       - name: Push Docker image
         run: |
-          IMAGE_NAME=ghcr.io/${{ github.actor || '' | lower }}/fire-detector:latest
+          IMAGE_NAME=ghcr.io/${{ github.actor | lower }}/fire-detector:latest
+          echo "Pushing image: $IMAGE_NAME"
           docker push $IMAGE_NAME
