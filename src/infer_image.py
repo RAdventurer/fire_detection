@@ -15,6 +15,7 @@ def load_model():
     return model
 
 
+
 def preprocess_image(image_path):
     img_bgr = cv2.imread(image_path)
     if img_bgr is None:
