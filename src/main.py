@@ -1,5 +1,3 @@
-# src/main.py
-# FastAPI + HTML dashboard for RetinaNet Fire/Smoke detection.
 
 import os
 import cv2
@@ -13,10 +11,9 @@ from src.download_model import download_model
 
 app = FastAPI(title="Fire & Smoke Detection API")
 
-# -------------------------
+# -------------------------------------------------------------------
 # Ensure model exists, then load
-# -------------------------
-
+# -------------------------------------------------------------------
 if not os.path.exists(MODEL_PATH):
     print("Model not found, downloading from Hugging Face...")
     download_model()
@@ -26,10 +23,9 @@ model = keras.models.load_model(MODEL_PATH)
 print("✅ Model loaded.")
 
 
-# -------------------------
-# Helper functions
-# -------------------------
-
+# -------------------------------------------------------------------
+# Helpers
+# -------------------------------------------------------------------
 def preprocess_bytes(image_bytes: bytes):
     file_bytes = np.frombuffer(image_bytes, np.uint8)
     img_bgr = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
@@ -90,10 +86,9 @@ def run_model_on_bytes(image_bytes: bytes):
     }, original_img, boxes, classes, scores
 
 
-# -------------------------
+# -------------------------------------------------------------------
 # HTML Dashboard
-# -------------------------
-
+# -------------------------------------------------------------------
 @app.get("/", response_class=HTMLResponse)
 async def index():
     return """
@@ -101,32 +96,117 @@ async def index():
       <head>
         <title>Fire & Smoke Detection</title>
         <style>
-          body { font-family: Arial, sans-serif; max-width: 800px; margin: 30px auto; }
-          h1 { color: #333; }
-          form { margin-bottom: 20px; }
-          button { margin-left: 10px; padding: 4px 10px; }
-          .status { margin-top: 20px; padding: 10px; border-radius: 6px; }
-          .ok { background: #e7f7e7; }
-          .fire { background: #ffe6e6; }
-          .smoke { background: #e6f0ff; }
-          .both { background: #fff3cd; }
-          .detections { margin-top: 10px; font-size: 13px; white-space: pre-wrap; }
-          img { margin-top: 15px; max-width: 100%; border: 1px solid #ccc; }
+          body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 30px auto;
+            background: #f5f5f5;
+            color: #333;
+          }
+          h1 {
+            text-align: center;
+          }
+          .card {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+          }
+          .status {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: 600;
+          }
+          .status.ok {
+            background: #e7f7e7;
+            border: 1px solid #7ac27a;
+            color: #316a31;
+          }
+          .status.fire {
+            background: #ffe0e0;
+            border: 1px solid #ff4b4b;
+            color: #8b0000;
+          }
+          .status.smoke {
+            background: #e6f0ff;
+            border: 1px solid #5c7edc;
+            color: #20325c;
+          }
+          .status.both {
+            background: #fff3cd;
+            border: 1px solid #ffcc00;
+            color: #8a6d00;
+          }
+          .detections {
+            margin-top: 10px;
+            font-size: 13px;
+            white-space: pre-wrap;
+            background: #282c34;
+            color: #e5e5e5;
+            padding: 10px;
+            border-radius: 6px;
+          }
+          button, input[type="file"] {
+            font-size: 14px;
+          }
+          button {
+            padding: 6px 12px;
+            margin-left: 10px;
+            cursor: pointer;
+            border-radius: 4px;
+            border: none;
+            background: #007bff;
+            color: #fff;
+          }
+          button:hover {
+            background: #0056b3;
+          }
+          img {
+            margin-top: 15px;
+            max-width: 100%;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+          }
+          .footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #777;
+          }
         </style>
       </head>
       <body>
         <h1>🔥 Fire & 💨 Smoke Detection</h1>
-        <p>Upload an image. The model will say if there is <b>fire</b>, <b>smoke</b>, or <b>nothing</b>, and show detections.</p>
 
-        <form id="upload-form">
-          <input type="file" name="file" id="file-input" accept="image/*" required />
-          <button type="submit">Detect</button>
-        </form>
+        <div class="card">
+          <p>
+            Upload an image from a **telecom site** or any environment.
+            The model will detect <b>fire</b>, <b>smoke</b>, or <b>nothing</b>.
+          </p>
 
-        <div id="result" class="status" style="display:none;"></div>
-        <pre id="raw-json" class="detections"></pre>
-        <h3>Output image:</h3>
-        <img id="output-img" src="" style="display:none;" />
+          <form id="upload-form">
+            <input type="file" name="file" id="file-input" accept="image/*" required />
+            <button type="submit">Detect</button>
+          </form>
+
+          <div id="result" class="status" style="display:none;"></div>
+        </div>
+
+        <div class="card">
+          <h3>Detections (JSON)</h3>
+          <pre id="raw-json" class="detections"></pre>
+        </div>
+
+        <div class="card">
+          <h3>Output Image with Boxes</h3>
+          <img id="output-img" src="" style="display:none;" />
+        </div>
+
+        <div class="footer">
+          FastAPI · RetinaNet · KerasCV · Hugging Face
+        </div>
 
         <script>
           const form = document.getElementById('upload-form');
@@ -153,7 +233,7 @@ async def index():
             outputImg.src = '';
 
             try {
-              // 1) JSON
+              // JSON
               const resp = await fetch('/predict', {
                 method: 'POST',
                 body: formData
@@ -164,31 +244,31 @@ async def index():
               let msg = '';
               let css = 'status ';
               if (data.fire_detected && data.smoke_detected) {
-                  msg = '🔥 Fire AND 💨 Smoke detected!';
-                  css += 'both';
+                msg = '🔥 Fire AND 💨 Smoke detected!';
+                css += 'both';
               } else if (data.fire_detected) {
-                  msg = '🔥 Fire detected!';
-                  css += 'fire';
+                msg = '🔥 Fire detected!';
+                css += 'fire';
               } else if (data.smoke_detected) {
-                  msg = '💨 Smoke detected!';
-                  css += 'smoke';
+                msg = '💨 Smoke detected!';
+                css += 'smoke';
               } else {
-                  msg = '✔ No fire or smoke detected.';
-                  css += 'ok';
+                msg = '✔ No fire or smoke detected.';
+                css += 'ok';
               }
               resultDiv.className = css;
               resultDiv.textContent = msg;
 
-              // 2) Image
+              // Image
               const imgResp = await fetch('/predict_image', {
-                  method: 'POST',
-                  body: formData
+                method: 'POST',
+                body: formData
               });
               if (imgResp.ok) {
-                  const imgBlob = await imgResp.blob();
-                  const imgURL = URL.createObjectURL(imgBlob);
-                  outputImg.style.display = 'block';
-                  outputImg.src = imgURL;
+                const imgBlob = await imgResp.blob();
+                const imgURL = URL.createObjectURL(imgBlob);
+                outputImg.style.display = 'block';
+                outputImg.src = imgURL;
               }
 
             } catch (err) {
@@ -203,10 +283,9 @@ async def index():
     """
 
 
-# -------------------------
+# -------------------------------------------------------------------
 # JSON prediction endpoint
-# -------------------------
-
+# -------------------------------------------------------------------
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
     try:
@@ -217,10 +296,9 @@ async def predict(file: UploadFile = File(...)):
         return JSONResponse({"error": str(e)}, status_code=500)
 
 
-# -------------------------
+# -------------------------------------------------------------------
 # Image prediction endpoint
-# -------------------------
-
+# -------------------------------------------------------------------
 @app.post("/predict_image")
 async def predict_image(file: UploadFile = File(...)):
     try:
