@@ -103,15 +103,13 @@ async def index():
             background: #f5f5f5;
             color: #333;
           }
-          h1 {
-            text-align: center;
-          }
+          h1 { text-align: center; }
           .card {
             background: #fff;
             border-radius: 8px;
             padding: 20px;
             box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-            margin-bottom: 20px;
+            margin-bottom: 25px;
           }
           .status {
             margin-top: 15px;
@@ -119,26 +117,10 @@ async def index():
             border-radius: 6px;
             font-weight: 600;
           }
-          .status.ok {
-            background: #e7f7e7;
-            border: 1px solid #7ac27a;
-            color: #316a31;
-          }
-          .status.fire {
-            background: #ffe0e0;
-            border: 1px solid #ff4b4b;
-            color: #8b0000;
-          }
-          .status.smoke {
-            background: #e6f0ff;
-            border: 1px solid #5c7edc;
-            color: #20325c;
-          }
-          .status.both {
-            background: #fff3cd;
-            border: 1px solid #ffcc00;
-            color: #8a6d00;
-          }
+          .ok { background: #e7f7e7; border:1px solid #7ac27a; color:#316a31; }
+          .fire { background:#ffe0e0; border:1px solid #ff4b4b; color:#8b0000; }
+          .smoke { background:#e6f0ff; border:1px solid #5c7edc; color:#20325c; }
+          .both { background:#fff3cd; border:1px solid #ffcc00; color:#8a6d00; }
           .detections {
             margin-top: 10px;
             font-size: 13px;
@@ -148,139 +130,151 @@ async def index():
             padding: 10px;
             border-radius: 6px;
           }
-          button, input[type="file"] {
-            font-size: 14px;
-          }
-          button {
-            padding: 6px 12px;
-            margin-left: 10px;
-            cursor: pointer;
-            border-radius: 4px;
-            border: none;
-            background: #007bff;
-            color: #fff;
-          }
-          button:hover {
-            background: #0056b3;
-          }
           img {
             margin-top: 15px;
             max-width: 100%;
-            border: 1px solid #ccc;
             border-radius: 6px;
-          }
-          .footer {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 12px;
-            color: #777;
+            border:1px solid #ccc;
           }
         </style>
       </head>
+
       <body>
         <h1>🔥 Fire & 💨 Smoke Detection</h1>
 
+        <!-- Image Upload -->
         <div class="card">
-          <p>
-            Upload an image from a **telecom site** or any environment.
-            The model will detect <b>fire</b>, <b>smoke</b>, or <b>nothing</b>.
-          </p>
-
-          <form id="upload-form">
-            <input type="file" name="file" id="file-input" accept="image/*" required />
-            <button type="submit">Detect</button>
+          <h2>Image Detection</h2>
+          <form id="img-form">
+            <input type="file" id="img-input" accept="image/*" required>
+            <button type="submit">Detect Image</button>
           </form>
 
-          <div id="result" class="status" style="display:none;"></div>
+          <div id="img-status" class="status" style="display:none;"></div>
+
+          <h4>Detections (JSON)</h4>
+          <pre id="img-json" class="detections"></pre>
+
+          <h4>Output Image</h4>
+          <img id="img-output" style="display:none;">
         </div>
 
+        <!-- Video Upload -->
         <div class="card">
-          <h3>Detections (JSON)</h3>
-          <pre id="raw-json" class="detections"></pre>
-        </div>
+          <h2>Video Detection (Summary Only)</h2>
+          <form id="vid-form">
+            <input type="file" id="vid-input" accept="video/*" required>
+            <button type="submit">Analyze Video</button>
+          </form>
 
-        <div class="card">
-          <h3>Output Image with Boxes</h3>
-          <img id="output-img" src="" style="display:none;" />
-        </div>
+          <div id="vid-status" class="status" style="display:none;"></div>
 
-        <div class="footer">
-          FastAPI · RetinaNet · KerasCV · Hugging Face
+          <h4>Video Summary (JSON)</h4>
+          <pre id="vid-json" class="detections"></pre>
         </div>
 
         <script>
-          const form = document.getElementById('upload-form');
-          const resultDiv = document.getElementById('result');
-          const rawJson = document.getElementById('raw-json');
-          const outputImg = document.getElementById('output-img');
-
-          form.addEventListener('submit', async (e) => {
+          // ---------------------------
+          // IMAGE HANDLER
+          // ---------------------------
+          const imgForm = document.getElementById('img-form');
+          imgForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const fileInput = document.getElementById('file-input');
-            if (!fileInput.files.length) {
-              alert('Please choose an image first.');
-              return;
+            const file = document.getElementById('img-input').files[0];
+            if (!file) return;
+
+            const fd = new FormData();
+            fd.append("file", file);
+
+            const status = document.getElementById('img-status');
+            const outImg = document.getElementById('img-output');
+            const raw = document.getElementById('img-json');
+
+            status.style.display = "block";
+            status.textContent = "Running detection...";
+
+            // JSON prediction
+            const resp = await fetch('/predict', { method:'POST', body:fd });
+            const data = await resp.json();
+            raw.textContent = JSON.stringify(data, null, 2);
+
+            let cls = "status ";
+            if (data.fire_detected && data.smoke_detected) {
+              cls += "both";
+              status.textContent = "🔥 Fire AND 💨 Smoke detected";
             }
-
-            const formData = new FormData();
-            formData.append('file', fileInput.files[0]);
-
-            resultDiv.style.display = 'block';
-            resultDiv.className = 'status';
-            resultDiv.textContent = 'Running detection...';
-            rawJson.textContent = '';
-            outputImg.style.display = 'none';
-            outputImg.src = '';
-
-            try {
-              // JSON
-              const resp = await fetch('/predict', {
-                method: 'POST',
-                body: formData
-              });
-              const data = await resp.json();
-              rawJson.textContent = JSON.stringify(data, null, 2);
-
-              let msg = '';
-              let css = 'status ';
-              if (data.fire_detected && data.smoke_detected) {
-                msg = '🔥 Fire AND 💨 Smoke detected!';
-                css += 'both';
-              } else if (data.fire_detected) {
-                msg = '🔥 Fire detected!';
-                css += 'fire';
-              } else if (data.smoke_detected) {
-                msg = '💨 Smoke detected!';
-                css += 'smoke';
-              } else {
-                msg = '✔ No fire or smoke detected.';
-                css += 'ok';
-              }
-              resultDiv.className = css;
-              resultDiv.textContent = msg;
-
-              // Image
-              const imgResp = await fetch('/predict_image', {
-                method: 'POST',
-                body: formData
-              });
-              if (imgResp.ok) {
-                const imgBlob = await imgResp.blob();
-                const imgURL = URL.createObjectURL(imgBlob);
-                outputImg.style.display = 'block';
-                outputImg.src = imgURL;
-              }
-
-            } catch (err) {
-              console.error(err);
-              resultDiv.className = 'status';
-              resultDiv.textContent = 'Error during detection.';
+            else if (data.fire_detected) {
+              cls += "fire";
+              status.textContent = "🔥 Fire detected";
             }
+            else if (data.smoke_detected) {
+              cls += "smoke";
+              status.textContent = "💨 Smoke detected";
+            }
+            else {
+              cls += "ok";
+              status.textContent = "✔ No fire or smoke";
+            }
+            status.className = cls;
+
+            // Image output
+            const imgResp = await fetch('/predict_image', { method:'POST', body:fd });
+            const blob = await imgResp.blob();
+            outImg.src = URL.createObjectURL(blob);
+            outImg.style.display = "block";
+          });
+
+          // ---------------------------
+          // VIDEO HANDLER
+          // ---------------------------
+          const vidForm = document.getElementById('vid-form');
+          vidForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const file = document.getElementById('vid-input').files[0];
+            if (!file) return;
+
+            const fd = new FormData();
+            fd.append("file", file);
+
+            const status = document.getElementById('vid-status');
+            const raw = document.getElementById('vid-json');
+
+            status.style.display = "block";
+            status.textContent = "Processing video (sampling frames)...";
+
+            const resp = await fetch('/predict_video_summary', {
+              method: 'POST',
+              body: fd
+            });
+
+            const data = await resp.json();
+            raw.textContent = JSON.stringify(data, null, 2);
+
+            let cls = "status ";
+            if (data.status === "fire_and_smoke") {
+              cls += "both";
+              status.textContent = "🔥 + 💨 Detected in video!";
+            }
+            else if (data.status === "fire") {
+              cls += "fire";
+              status.textContent = "🔥 Fire detected in video!";
+            }
+            else if (data.status === "smoke") {
+              cls += "smoke";
+              status.textContent = "💨 Smoke detected in video!";
+            }
+            else {
+              cls += "ok";
+              status.textContent = "✔ No fire or smoke detected in video.";
+            }
+            status.className = cls;
           });
         </script>
+
       </body>
     </html>
     """
+
 
 
 # -------------------------------------------------------------------
@@ -338,6 +332,107 @@ async def predict_image(file: UploadFile = File(...)):
             raise RuntimeError("Failed to encode image")
 
         return Response(content=buffer.tobytes(), media_type="image/jpeg")
+
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+import tempfile
+import cv2
+import numpy as np
+# ... keep the rest of your imports and existing code ...
+
+
+@app.post("/predict_video_summary")
+async def predict_video_summary(file: UploadFile = File(...)):
+    """
+    Upload a video and get a summary:
+    - total frames
+    - how many frames with fire / smoke
+    - global status
+    """
+    try:
+        # Save uploaded video to a temp file
+        suffix = os.path.splitext(file.filename)[1]
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+            tmp.write(await file.read())
+            tmp_path = tmp.name
+
+        cap = cv2.VideoCapture(tmp_path)
+        if not cap.isOpened():
+            os.remove(tmp_path)
+            return JSONResponse({"error": "Cannot open video"}, status_code=400)
+
+        total_frames = 0
+        fire_frames = 0
+        smoke_frames = 0
+
+        # sample every Nth frame to reduce compute
+        FRAME_STEP = 5
+
+        while True:
+            ret = cap.grab()
+            if not ret:
+                break
+
+            # process every FRAME_STEP frames
+            frame_idx = int(cap.get(cv2.CAP_PROP_POS_FRAMES))
+            if frame_idx % FRAME_STEP != 0:
+                continue
+
+            ret, frame = cap.retrieve()
+            if not ret:
+                break
+
+            total_frames += 1
+
+            # same preprocessing as images
+            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            rgb = cv2.resize(rgb, (IMAGE_SIZE, IMAGE_SIZE))
+            rgb = rgb.astype("float32") / 255.0
+            inp = np.expand_dims(rgb, axis=0)
+
+            preds = model.predict(inp, verbose=0)
+            boxes = preds["boxes"][0]
+            classes = preds["classes"][0]
+            scores = preds["confidence"][0]
+
+            fire_here = False
+            smoke_here = False
+
+            for box, cid, score in zip(boxes, classes, scores):
+                if float(score) < CONF_THRESH:
+                    continue
+                cid = int(cid)
+                if cid == 0:
+                    fire_here = True
+                elif cid == 1:
+                    smoke_here = True
+
+            if fire_here:
+                fire_frames += 1
+            if smoke_here:
+                smoke_frames += 1
+
+        cap.release()
+        os.remove(tmp_path)
+
+        any_fire = fire_frames > 0
+        any_smoke = smoke_frames > 0
+
+        if any_fire and any_smoke:
+            status = "fire_and_smoke"
+        elif any_fire:
+            status = "fire"
+        elif any_smoke:
+            status = "smoke"
+        else:
+            status = "none"
+
+        return {
+            "status": status,
+            "sampled_frames": total_frames,
+            "frames_with_fire": fire_frames,
+            "frames_with_smoke": smoke_frames,
+        }
 
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)
